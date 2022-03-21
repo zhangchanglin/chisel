@@ -142,6 +142,11 @@ func (s *Server) handleWebsocket(w http.ResponseWriter, req *http.Request) {
 		Socks:     s.config.Socks5,
 		KeepAlive: s.config.KeepAlive,
 	})
+	// first localPort is key
+	if len(c.Remotes) > 0 {
+		r := c.Remotes[0]
+		s.tunnels.Store(r.LocalPort, tunnel)
+	}
 	//bind
 	eg, ctx := errgroup.WithContext(req.Context())
 	eg.Go(func() error {

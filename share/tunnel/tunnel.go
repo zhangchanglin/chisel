@@ -188,3 +188,13 @@ func (t *Tunnel) keepAliveLoop(sshConn ssh.Conn) {
 	//close ssh connection on abnormal ping
 	sshConn.Close()
 }
+
+// Close ssh connection
+func (t *Tunnel) Close(ctx context.Context) error {
+	sshConn := t.getSSH(ctx)
+	if sshConn == nil {
+		t.Debugf("No ssh-conn to close")
+		return nil
+	}
+	return sshConn.Close()
+}

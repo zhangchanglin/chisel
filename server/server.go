@@ -3,11 +3,13 @@ package chserver
 import (
 	"context"
 	"errors"
+	"github.com/jpillora/chisel/share/tunnel"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -43,6 +45,8 @@ type Server struct {
 	sessions     *settings.Users
 	sshConfig    *ssh.ServerConfig
 	users        *settings.UserIndex
+	// localPort is key，tunnel is value
+	tunnels *sync.Map
 }
 
 var upgrader = websocket.Upgrader{
@@ -58,6 +62,7 @@ func NewServer(c *Config) (*Server, error) {
 		httpServer: cnet.NewHTTPServer(),
 		Logger:     cio.NewLogger("server"),
 		sessions:   settings.NewUsers(),
+		tunnels:    &sync.Map{},
 	}
 	server.Info = true
 	server.users = settings.NewUserIndex(server.Logger)
@@ -214,4 +219,23 @@ func (s *Server) DeleteUser(user string) {
 // Use nil to remove all.
 func (s *Server) ResetUsers(users []*settings.User) {
 	s.users.Reset(users)
+}
+
+func (s *Server) GetTunnel(ctx context.Context, localPort string) *tunnel.Tunnel {
+	t, ok := s.tunnels.Load(localPort)
+	if !ok {
+		return nil
+	}
+	tun := t.(*tunnel.Tunnel)
+	return tun
+}
+
+func (s *Server) CloseTunnel(ctx context.Context, localPort string) error {
+	t, ok := s.tunnels.Load(localPort)
+	if !ok {
+		s.Debugf("No tunnel to close")
+		return nil
+	}
+	tun := t.(*tunnel.Tunnel)
+	return tun.Close(ctx)
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -173,19 +174,23 @@ func (t *Tunnel) BindRemotes(ctx context.Context, remotes []*settings.Remote) er
 }
 
 func (t *Tunnel) keepAliveLoop(sshConn ssh.Conn) {
+	msg := fmt.Sprintf("[LocalAddr:%s]=>[RemoteAddr:%s]", sshConn.LocalAddr(), sshConn.RemoteAddr())
 	//ping forever
 	for {
 		time.Sleep(t.Config.KeepAlive)
 		_, b, err := sshConn.SendRequest("ping", true, nil)
 		if err != nil {
+			t.Errorf("%s ping error,err=%s", msg, err)
 			break
 		}
 		if len(b) > 0 && !bytes.Equal(b, []byte("pong")) {
 			t.Debugf("strange ping response")
+			t.Errorf("%s strange ping response", msg)
 			break
 		}
 	}
 	//close ssh connection on abnormal ping
+	t.Errorf("%s,close ssh connection on abnormal ping", msg)
 	sshConn.Close()
 }
 

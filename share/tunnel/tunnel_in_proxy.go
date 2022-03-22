@@ -99,6 +99,7 @@ func (p *Proxy) runTCP(ctx context.Context) error {
 	go func() {
 		select {
 		case <-ctx.Done():
+			p.Infof("%s listen close", p.tcp.Addr())
 			p.tcp.Close()
 		case <-done:
 		}

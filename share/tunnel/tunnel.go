@@ -181,8 +181,9 @@ func (t *Tunnel) keepAliveLoop(sshConn ssh.Conn) {
 	//ping forever
 	for {
 		time.Sleep(t.Config.KeepAlive)
-		t.Infof("%s start keep alive", msg)
+		t.Infof("%s start send request keep alive", msg)
 		_, b, err := sshConn.SendRequest("ping", true, nil)
+		t.Infof("%s end send request keep alive", msg)
 		if err != nil {
 			t.Errorf("%s ping error,err=%s", msg, err)
 			break

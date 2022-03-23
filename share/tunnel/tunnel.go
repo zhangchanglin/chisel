@@ -94,9 +94,10 @@ func (t *Tunnel) BindSSH(ctx context.Context, c ssh.Conn, reqs <-chan *ssh.Reque
 	//block until closed
 	go t.handleSSHRequests(reqs)
 	go t.handleSSHChannels(chans)
-	t.Debugf("SSH connected")
+	msg := fmt.Sprintf("[LocalAddr:%s]=>[RemoteAddr:%s]", c.LocalAddr(), c.RemoteAddr())
+	t.Debugf("%s, SSH connected", msg)
 	err := c.Wait()
-	t.Debugf("SSH disconnected")
+	t.Debugf("%s,SSH disconnected", msg)
 	//mark inactive and block
 	t.activatingConn.Add(1)
 	t.activeConnMut.Lock()
@@ -161,15 +162,17 @@ func (t *Tunnel) BindRemotes(ctx context.Context, remotes []*settings.Remote) er
 	}
 	//TODO: handle tunnel close
 	eg, ctx := errgroup.WithContext(ctx)
+	var msg string
 	for _, proxy := range proxies {
+		msg = fmt.Sprintf("[LocalAddr:%s]=>[RemoteAddr:%s]", proxy.tcp.Addr(), proxy.remote.Remote())
 		p := proxy
 		eg.Go(func() error {
 			return p.Run(ctx)
 		})
 	}
-	t.Debugf("Bound proxies")
+	t.Debugf("%s,Bound proxies", msg)
 	err := eg.Wait()
-	t.Debugf("Unbound proxies")
+	t.Debugf("%s,Unbound proxies", msg)
 	return err
 }
 
@@ -178,11 +181,13 @@ func (t *Tunnel) keepAliveLoop(sshConn ssh.Conn) {
 	//ping forever
 	for {
 		time.Sleep(t.Config.KeepAlive)
+		t.Infof("%s start keep alive", msg)
 		_, b, err := sshConn.SendRequest("ping", true, nil)
 		if err != nil {
 			t.Errorf("%s ping error,err=%s", msg, err)
 			break
 		}
+		t.Infof("%s keep alive content %s", msg, string(b))
 		if len(b) > 0 && !bytes.Equal(b, []byte("pong")) {
 			t.Debugf("strange ping response")
 			t.Errorf("%s strange ping response", msg)

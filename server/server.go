@@ -31,8 +31,8 @@ type Config struct {
 	Reverse        bool
 	KeepAlive      time.Duration
 	TLS            TLSConfig
-	onConnect      func(localPort string, tun *tunnel.Tunnel)
-	onConnectClose func(localPort string)
+	OnConnect      func(localPort string, tun *tunnel.Tunnel)
+	OnConnectClose func(localPort string)
 }
 
 // Server respresent a chisel service

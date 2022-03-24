@@ -147,8 +147,8 @@ func (s *Server) handleWebsocket(w http.ResponseWriter, req *http.Request) {
 	if len(c.Remotes) > 0 {
 		r := c.Remotes[0]
 		localPort = r.LocalPort
-		if s.config.onConnect != nil {
-			go s.config.onConnect(localPort, tunnel)
+		if s.config.OnConnect != nil {
+			go s.config.OnConnect(localPort, tunnel)
 		}
 	}
 	//bind
@@ -172,7 +172,7 @@ func (s *Server) handleWebsocket(w http.ResponseWriter, req *http.Request) {
 	} else {
 		l.Debugf("Closed connection")
 	}
-	if localPort != "" && s.config.onConnectClose != nil {
-		go s.config.onConnectClose(localPort)
+	if localPort != "" && s.config.OnConnectClose != nil {
+		go s.config.OnConnectClose(localPort)
 	}
 }

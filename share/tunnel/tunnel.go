@@ -180,13 +180,12 @@ func (t *Tunnel) keepAliveLoop(sshConn ssh.Conn) {
 	msg := fmt.Sprintf("[LocalAddr:%s]=>[RemoteAddr:%s]", sshConn.LocalAddr(), sshConn.RemoteAddr())
 	defer func() {
 		//close ssh connection on abnormal ping
-		t.Errorf("%s,close ssh connection on abnormal ping", msg)
+		t.Debugf("%s,close ssh connection on abnormal ping", msg)
 		sshConn.Close()
 	}()
 	//ping forever
 	for {
 		time.Sleep(t.Config.KeepAlive)
-		t.Infof("%s start send request keep alive", msg)
 		select {
 		case <-time.After(t.Config.KeepAlive):
 			return
@@ -204,15 +203,14 @@ func (t *Tunnel) KeepAliveChan(sshConn ssh.Conn) <-chan error {
 	go func() {
 		defer close(ch)
 		_, b, err := sshConn.SendRequest("ping", true, nil)
-		t.Infof("%s end send request keep alive", msg)
 		if err != nil {
-			t.Errorf("%s ping error,err=%s", msg, err)
+			t.Debugf("%s ping error,err=%s", msg, err)
 			ch <- err
 		}
 		t.Infof("%s keep alive content %s", msg, string(b))
 		if len(b) > 0 && !bytes.Equal(b, []byte("pong")) {
-			t.Debugf("strange ping response")
-			t.Errorf("%s strange ping response", msg)
+			// t.Debugf("strange ping response")
+			t.Debugf("%s strange ping response", msg)
 			ch <- fmt.Errorf("strange ping response")
 		}
 	}()

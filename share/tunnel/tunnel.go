@@ -207,7 +207,6 @@ func (t *Tunnel) KeepAliveChan(sshConn ssh.Conn) <-chan error {
 			t.Debugf("%s ping error,err=%s", msg, err)
 			ch <- err
 		}
-		t.Infof("%s keep alive content %s", msg, string(b))
 		if len(b) > 0 && !bytes.Equal(b, []byte("pong")) {
 			// t.Debugf("strange ping response")
 			t.Debugf("%s strange ping response", msg)

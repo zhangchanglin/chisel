@@ -9,7 +9,6 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"regexp"
-	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -24,14 +23,16 @@ import (
 
 // Config is the configuration for the chisel service
 type Config struct {
-	KeySeed   string
-	AuthFile  string
-	Auth      string
-	Proxy     string
-	Socks5    bool
-	Reverse   bool
-	KeepAlive time.Duration
-	TLS       TLSConfig
+	KeySeed        string
+	AuthFile       string
+	Auth           string
+	Proxy          string
+	Socks5         bool
+	Reverse        bool
+	KeepAlive      time.Duration
+	TLS            TLSConfig
+	onConnect      func(localPort string, tun *tunnel.Tunnel)
+	onConnectClose func(localPort string)
 }
 
 // Server respresent a chisel service
@@ -45,8 +46,6 @@ type Server struct {
 	sessions     *settings.Users
 	sshConfig    *ssh.ServerConfig
 	users        *settings.UserIndex
-	// localPort is key，tunnel is value
-	tunnels *sync.Map
 }
 
 var upgrader = websocket.Upgrader{
@@ -62,7 +61,6 @@ func NewServer(c *Config) (*Server, error) {
 		httpServer: cnet.NewHTTPServer(),
 		Logger:     cio.NewLogger("server"),
 		sessions:   settings.NewUsers(),
-		tunnels:    &sync.Map{},
 	}
 	server.Info = true
 	server.users = settings.NewUserIndex(server.Logger)
@@ -219,23 +217,4 @@ func (s *Server) DeleteUser(user string) {
 // Use nil to remove all.
 func (s *Server) ResetUsers(users []*settings.User) {
 	s.users.Reset(users)
-}
-
-func (s *Server) GetTunnel(ctx context.Context, localPort string) *tunnel.Tunnel {
-	t, ok := s.tunnels.Load(localPort)
-	if !ok {
-		return nil
-	}
-	tun := t.(*tunnel.Tunnel)
-	return tun
-}
-
-func (s *Server) CloseTunnel(ctx context.Context, localPort string) error {
-	t, ok := s.tunnels.Load(localPort)
-	if !ok {
-		s.Debugf("No tunnel to close")
-		return nil
-	}
-	tun := t.(*tunnel.Tunnel)
-	return tun.Close(ctx)
 }

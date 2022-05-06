@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"sync"
 	"time"
@@ -224,4 +225,16 @@ func (t *Tunnel) Close(ctx context.Context) error {
 		return nil
 	}
 	return sshConn.Close()
+}
+
+func (t *Tunnel) RemoteIP(ctx context.Context) string {
+	sshConn := t.getSSH(ctx)
+	if sshConn == nil {
+		return ""
+	}
+	ip, _, err := net.SplitHostPort(sshConn.RemoteAddr().String())
+	if err != nil {
+		return ""
+	}
+	return ip
 }

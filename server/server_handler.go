@@ -1,6 +1,7 @@
 package chserver
 
 import (
+	"net"
 	"net/http"
 	"strings"
 	"sync/atomic"
@@ -142,6 +143,8 @@ func (s *Server) handleWebsocket(w http.ResponseWriter, req *http.Request) {
 		Socks:     s.config.Socks5,
 		KeepAlive: s.config.KeepAlive,
 	})
+
+	tunnel.RemoteIP = getRemoteIP(req)
 	// first localPort is key
 	var localPort string
 	if len(c.Remotes) > 0 {
@@ -175,4 +178,18 @@ func (s *Server) handleWebsocket(w http.ResponseWriter, req *http.Request) {
 	if localPort != "" && s.config.OnConnectClose != nil {
 		go s.config.OnConnectClose(localPort)
 	}
+}
+
+func getRemoteIP(r *http.Request) string {
+	for _, h := range []string{"X-Real-Ip"} {
+		addresses := strings.Split(r.Header.Get(h), ",")
+		for i := len(addresses) - 1; i >= 0; i-- {
+			ip := addresses[i]
+			if len(ip) > 0 {
+				return ip
+			}
+		}
+	}
+	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+	return ip
 }

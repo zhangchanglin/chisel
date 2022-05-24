@@ -181,7 +181,7 @@ func (s *Server) handleWebsocket(w http.ResponseWriter, req *http.Request) {
 }
 
 func getRemoteIP(r *http.Request) string {
-	for _, h := range []string{"X-Real-Ip"} {
+	for _, h := range []string{"X-Real-IP", "x-real-ip"} {
 		addresses := strings.Split(r.Header.Get(h), ",")
 		for i := len(addresses) - 1; i >= 0; i-- {
 			ip := addresses[i]
